@@ -1,0 +1,82 @@
+[
+  {
+    "Name": "部屋A",
+    "BackgroundColor": "#f0e68c",
+    "Points": [
+      {"X": 10, "Y": 10},
+      {"X": 200, "Y": 10},
+      {"X": 200, "Y": 150},
+      {"X": 10, "Y": 150}
+    ],
+    "Doors": [
+      {
+        "CenterX": 100,
+        "CenterY": 150,
+        "Radius": 30,
+        "StartAngle": 180,
+        "EndAngle": 270,
+        "Color": "#80CCFFFF"
+      }
+    ]
+  },
+  {
+    "Name": "部屋B",
+    "BackgroundColor": "#fafad2",
+    "Points": [
+      {"X": 200, "Y": 10},
+      {"X": 400, "Y": 10},
+      {"X": 400, "Y": 150},
+      {"X": 200, "Y": 150}
+    ],
+    "Doors": [
+      {
+        "CenterX": 200,
+        "CenterY": 80,
+        "Radius": 30,
+        "StartAngle": 270,
+        "EndAngle": 360,
+        "Color": "#80CCFFFF"
+      }
+    ]
+  },
+  {
+    "Name": "部屋C",
+    "BackgroundColor": "#f5f5dc",
+    "Points": [
+      {"X": 10, "Y": 150},
+      {"X": 200, "Y": 150},
+      {"X": 200, "Y": 300},
+      {"X": 10, "Y": 300}
+    ],
+    "Doors": [
+      {
+        "CenterX": 200,
+        "CenterY": 230,
+        "Radius": 30,
+        "StartAngle": 90,
+        "EndAngle": 180,
+        "Color": "#80CCFFFF"
+      }
+    ]
+  },
+  {
+    "Name": "部屋D",
+    "BackgroundColor": "#fffacd",
+    "Points": [
+      {"X": 200, "Y": 150},
+      {"X": 400, "Y": 150},
+      {"X": 400, "Y": 300},
+      {"X": 200, "Y": 300}
+    ],
+    "Doors": [
+      {
+        "CenterX": 300,
+        "CenterY": 150,
+        "Radius": 30,
+        "StartAngle": 0,
+        "EndAngle": 90,
+        "Color": "#80CCFFFF"
+      }
+    ]
+  }
+]
