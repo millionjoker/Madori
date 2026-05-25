@@ -31,11 +31,13 @@ class Room {
 }
 
 class Door {
-  final Offset center;
-  final double radius;
-  final double startAngle;
-  final double endAngle;
-  final Color color;
+  Offset center;
+  double radius;
+  double startAngle;
+  double endAngle;
+  double currentEndAngle;
+  Color color;
+  bool isOpen;
 
   Door({
     required this.center,
@@ -43,7 +45,8 @@ class Door {
     required this.startAngle,
     required this.endAngle,
     required this.color,
-  });
+    this.isOpen = false,
+  }) : currentEndAngle = endAngle;
 
   factory Door.fromJson(Map<String, dynamic> json) {
     return Door(
