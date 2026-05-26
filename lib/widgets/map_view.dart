@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../models/room.dart';
+import '../../../models/door.dart';
+import '../../../models/furniture.dart';
 import 'map_view_platform.dart';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:path_drawing/path_drawing.dart';
 
 class MapView extends StatefulWidget {
   final List<Room> rooms;
@@ -18,6 +21,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
   Set<Room> selectedRooms = {};
   //late AnimationController _controller;
   //late Animation<double> _angleAnim;
+  Furniture? selectedFurniture;
   Map<int, AnimationController> doorControllers = {};
 
   @override
@@ -55,6 +59,34 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       },
       onTapUp: (details) {
         final local = (details.localPosition - offset) / scale;
+
+        // 家具のタップ判定（ドアより先に行う）
+        for (int roomIndex = 0; roomIndex < widget.rooms.length; roomIndex++) {
+          final room = widget.rooms[roomIndex];
+
+          for (int fIndex = 0; fIndex < room.furnitures.length; fIndex++) {
+            final f = room.furnitures[fIndex];
+
+            final rect = Rect.fromLTWH(f.x, f.y, f.width, f.height);
+
+            if (rect.contains(local)) {
+              print("=== Furniture tapped ===");
+              print("Room: ${room.name}");
+              print("Furniture: ${f.type}");
+              print("Position: (${f.x}, ${f.y})");
+              print("========================");
+
+              // ここで何か状態を変えたい場合は setState を使う
+              // 例: 選択状態を持たせるなら
+              setState(() {
+                f.isOn = !f.isOn;
+              });
+
+              return; // 家具に当たったら他の判定はしない
+            }
+          }
+        }
+
         // ドアのタップ判定
         for (int roomIndex = 0; roomIndex < widget.rooms.length; roomIndex++) {
           final room = widget.rooms[roomIndex];
@@ -82,14 +114,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                 duration: const Duration(milliseconds: kIsWeb ? 5000 : 500),
               );
               doorControllers[key] = controller;
-
-              // final controller = doorControllers.putIfAbsent(
-              //   key,
-              //   () => AnimationController(
-              //     vsync: this,
-              //     duration: const Duration(milliseconds: 300),
-              //   ),
-              // );
 
               final from = door.currentEndAngle;
               final to = door.isOpen ? door.endAngle : door.startAngle;
@@ -144,6 +168,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
           scale: scale,
           offset: offset,
           selectedRooms: selectedRooms,
+          selectedFurniture: selectedFurniture,
         ),
         child: Container(),
       ),
@@ -199,12 +224,14 @@ class _MapPainter extends CustomPainter {
   final double scale;
   final Offset offset;
   final Set<Room> selectedRooms;
+  final Furniture? selectedFurniture;
 
   _MapPainter({
     required this.rooms,
     required this.scale,
     required this.offset,
     required this.selectedRooms,
+    required this.selectedFurniture,
   });
 
   @override
@@ -258,8 +285,60 @@ class _MapPainter extends CustomPainter {
           ..moveTo(door.center.dx, door.center.dy)
           ..arcTo(rect, door.startAngle * pi / 180, safeSweep, false)
           ..close();
-
         canvas.drawPath(doorPath, doorPaint);
+
+        // ★ 閉じているときは「扉の線」だけ描く
+        if (door.currentEndAngle != door.endAngle) {
+          final doorPaint2 = Paint()
+            ..color = door.color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2;
+          final doorPath = Path()
+            ..moveTo(door.center.dx, door.center.dy)
+            ..arcTo(rect, door.startAngle * pi / 180, pi / 2, false);
+          //..close();
+          final dashed = dashPath(
+            doorPath,
+            dashArray: CircularIntervalList<double>([4, 2]),
+          );
+          canvas.drawPath(dashed, doorPaint2);
+        }
+      }
+    }
+
+    // ③ 家具（Furnitures）を描く
+    for (final room in rooms) {
+      for (final f in room.furnitures) {
+        final rect = Rect.fromLTWH(f.x, f.y, f.width, f.height);
+
+        final isSelected = (selectedFurniture == f);
+
+        // 塗りつぶし
+        final paint = Paint()
+          ..color = f.isOn
+              ? Colors.green.withOpacity(0.6) // ← ON の色（例：緑）
+              : f.color.withOpacity(0.6) // ← OFF の色（元の色）
+          ..style = PaintingStyle.fill;
+        canvas.drawRect(rect, paint);
+
+        // 枠線
+        final border = Paint()
+          ..color = f.isOn ? Colors.green : Colors.brown
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
+
+        canvas.drawRect(rect, border);
+
+        // 机の種類（Type）を小さく表示したい場合
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: f.type,
+            style: const TextStyle(color: Colors.black, fontSize: 10),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(canvas, Offset(f.x + 2, f.y + 2));
       }
     }
   }

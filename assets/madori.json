@@ -17,7 +17,26 @@
         "EndAngle": 270,
         "Color": "#80CCFFFF"
       }
+    ],
+    "Furnitures": [
+    {
+      "Type": "Desk",
+      "X": 40,
+      "Y": 40,
+      "Width": 40,
+      "Height": 30,
+      "Color": "#deb887"
+    },
+    {
+      "Type": "Desk",
+      "X": 120,
+      "Y": 60,
+      "Width": 50,
+      "Height": 35,
+      "Color": "#d2b48c"
+    }
     ]
+
   },
   {
     "Name": "部屋B",
@@ -37,6 +56,16 @@
         "EndAngle": 360,
         "Color": "#80CCFFFF"
       }
+    ],
+    "Furnitures": [
+    {
+      "Type": "Desk",
+      "X": 250,
+      "Y": 40,
+      "Width": 60,
+      "Height": 40,
+      "Color": "#cd853f"
+    }      
     ]
   },
   {
@@ -57,6 +86,9 @@
         "EndAngle": 180,
         "Color": "#80CCFFFF"
       }
+    ],
+    "Furnitures": [
+      
     ]
   },
   {
@@ -77,6 +109,9 @@
         "EndAngle": 90,
         "Color": "#80CCFFFF"
       }
+    ],
+    "Furnitures": [
+      
     ]
   }
 ]

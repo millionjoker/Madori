@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'door.dart';
+import 'furniture.dart';
 
 class Room {
   final String name;
   final Color color;
   final List<Offset> points;
   final List<Door> doors;
+  final List<Furniture> furnitures;
 
   Room({
     required this.name,
     required this.color,
     required this.points,
     required this.doors,
+    required this.furnitures,
   });
 
   factory Room.fromJson(Map<String, dynamic> json) {
@@ -23,41 +27,16 @@ class Room {
                 Offset((p['X'] as num).toDouble(), (p['Y'] as num).toDouble()),
           )
           .toList(),
+
       doors: json['Doors'] == null
           ? []
           : (json['Doors'] as List).map((d) => Door.fromJson(d)).toList(),
-    );
-  }
-}
 
-class Door {
-  Offset center;
-  double radius;
-  double startAngle;
-  double endAngle;
-  double currentEndAngle;
-  Color color;
-  bool isOpen;
-
-  Door({
-    required this.center,
-    required this.radius,
-    required this.startAngle,
-    required this.endAngle,
-    required this.color,
-    this.isOpen = false,
-  }) : currentEndAngle = endAngle;
-
-  factory Door.fromJson(Map<String, dynamic> json) {
-    return Door(
-      center: Offset(
-        (json['CenterX'] as num).toDouble(),
-        (json['CenterY'] as num).toDouble(),
-      ),
-      radius: (json['Radius'] as num).toDouble(),
-      startAngle: (json['StartAngle'] as num).toDouble(),
-      endAngle: (json['EndAngle'] as num).toDouble(),
-      color: _parseColor(json['Color']),
+      furnitures: json['Furnitures'] == null
+          ? []
+          : (json['Furnitures'] as List)
+                .map((f) => Furniture.fromJson(f))
+                .toList(),
     );
   }
 }
