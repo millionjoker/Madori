@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/room.dart';
 import 'map_view_platform.dart';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 
 class MapView extends StatefulWidget {
   final List<Room> rooms;
@@ -15,17 +16,17 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
   double scale = 1.0;
   Offset offset = Offset.zero;
   Set<Room> selectedRooms = {};
-  late AnimationController _controller;
-  late Animation<double> _angleAnim;
+  //late AnimationController _controller;
+  //late Animation<double> _angleAnim;
   Map<int, AnimationController> doorControllers = {};
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
+    //_controller = AnimationController(
+    //  vsync: this,
+    //  duration: const Duration(milliseconds: 800),
+    //);
 
     setupWheelListener(
       () {
@@ -42,6 +43,9 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // ★ ここに追加（Chrome で Ticker が止まっていないか確認）
+    //print("TickerMode = ${TickerMode.of(context)}");
+
     return GestureDetector(
       onScaleUpdate: (details) {
         setState(() {
@@ -51,39 +55,67 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       },
       onTapUp: (details) {
         final local = (details.localPosition - offset) / scale;
-
         // ドアのタップ判定
-        for (final room in widget.rooms) {
-          for (int i = 0; i < room.doors.length; i++) {
-            final door = room.doors[i];
-            print("Door center = ${door.center}, radius = ${door.radius}");
+        for (int roomIndex = 0; roomIndex < widget.rooms.length; roomIndex++) {
+          final room = widget.rooms[roomIndex];
+          for (int doorIndex = 0; doorIndex < room.doors.length; doorIndex++) {
+            final door = room.doors[doorIndex];
+            //print("Door center = ${door.center}, radius = ${door.radius}");
+            final key = roomIndex * 1000 + doorIndex;
 
             if (_isInsideDoor(local, door)) {
-              final controller = doorControllers.putIfAbsent(
-                i,
-                () => AnimationController(
-                  vsync: this,
-                  duration: const Duration(milliseconds: 800),
-                ),
+              print("=== Door tapped (before animation) ===");
+              print("startAngle = ${door.startAngle}");
+              print("endAngle = ${door.endAngle}");
+              print("currentEndAngle = ${door.currentEndAngle}");
+              print("isOpen = ${door.isOpen}");
+              print("======================================");
+
+              // ★ 以前の controller があれば破棄
+              if (doorControllers.containsKey(key)) {
+                doorControllers[key]!.dispose();
+              }
+
+              // ★ 新しい controller を毎回作る（これが Web で必要）
+              final controller = AnimationController(
+                vsync: this,
+                duration: const Duration(milliseconds: kIsWeb ? 5000 : 500),
               );
+              doorControllers[key] = controller;
+
+              // final controller = doorControllers.putIfAbsent(
+              //   key,
+              //   () => AnimationController(
+              //     vsync: this,
+              //     duration: const Duration(milliseconds: 300),
+              //   ),
+              // );
+
               final from = door.currentEndAngle;
               final to = door.isOpen ? door.endAngle : door.startAngle;
               late Animation<double>? animation;
+
               animation =
                   Tween<double>(begin: from, end: to).animate(
-                    CurvedAnimation(
-                      parent: controller,
-                      curve: Curves.easeOut, // 自然な動き
-                    ),
-                  )..addListener(() {
-                    setState(() {
-                      if (animation != null) {
-                        door.currentEndAngle = animation.value;
+                      CurvedAnimation(
+                        parent: controller,
+                        curve: Curves.easeOut,
+                      ),
+                    )
+                    ..addListener(() {
+                      setState(() {
+                        door.currentEndAngle = animation!.value;
+                        print("anim value = ${animation!.value}");
+                      });
+                    })
+                    ..addStatusListener((status) {
+                      if (status == AnimationStatus.completed) {
+                        door.isOpen = !door.isOpen;
+                        print("anim completed, isOpen = ${door.isOpen}");
                       }
                     });
-                  });
-              door.isOpen = !door.isOpen;
-              controller.reset();
+
+              //controller.reset();
               controller.forward(from: 0);
 
               return;
@@ -220,7 +252,7 @@ class _MapPainter extends CustomPainter {
 
         final rect = Rect.fromCircle(center: door.center, radius: door.radius);
         final sweep = (door.currentEndAngle - door.startAngle) * pi / 180;
-        final safeSweep = sweep.abs().clamp(0.0, 2 * pi);
+        final safeSweep = sweep.abs().clamp(0.0001, 2 * pi);
 
         final doorPath = Path()
           ..moveTo(door.center.dx, door.center.dy)
