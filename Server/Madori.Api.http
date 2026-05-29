@@ -1,0 +1,32 @@
+@MadoriApi_HostAddress = http://localhost:5187
+
+### Get state
+GET {{MadoriApi_HostAddress}}/state
+Accept: application/json
+
+### Post state
+POST {{MadoriApi_HostAddress}}/state
+Content-Type: application/json
+
+{
+  "jsonData": "{\"hello\": \"world\"}"
+}
+
+### Get logs
+GET {{MadoriApi_HostAddress}}/logs
+Accept: application/json
+
+### Post log
+POST {{MadoriApi_HostAddress}}/logs
+Content-Type: application/json
+
+{
+  "deviceId": "ipad-001",
+  "eventTime": "2026-05-29T06:00:00Z",
+  "eventType": "door_open",
+  "payload": {
+    "roomId": 3,
+    "doorId": 1,
+    "action": "open"
+  }
+}
