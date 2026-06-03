@@ -6,7 +6,7 @@ namespace Madori.Api.Models
     {
         public int Id { get; set; }
         // Flutter の state.json をそのまま保存する
-        public JsonElement JsonData { get; set; }
+        public string JsonData { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
     }
 }

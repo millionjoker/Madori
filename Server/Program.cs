@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Madori.Api;   // ← AppDb の namespace に合わせる
+using Madori.Api; 
 using Madori.Api.Models; 
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,12 @@ builder.Services.AddDbContext<AppDb>(options =>
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// ==============================
+// ★ 間取りデータの読み込み
+// ==============================
+var jsonText = File.ReadAllText("madori.json");
+var rooms = JsonSerializer.Deserialize<List<Room>>(jsonText);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -45,6 +52,182 @@ app.MapPost("/state", async (AppDb db, State newState) =>
 
 // ==============================
 // ★ State API（ここまで）
+// ==============================
+
+// ==============================
+// ★ Room API（ここから）
+// ==============================
+
+// 部屋を ON にする
+app.MapPost("/rooms/{roomId}/on", async (int roomId, AppDb db) =>
+{
+    var room = rooms.FirstOrDefault(r => r.Id == roomId);
+    if (room == null)
+        return Results.NotFound($"Room {roomId} not found");
+
+    var state = new State
+    {
+        JsonData = JsonSerializer.Serialize(new {
+            room = roomId,
+            isOn = true
+        }),
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.States.Add(state);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { roomId, isOn = true });
+});
+
+// 部屋を OFF にする
+app.MapPost("/rooms/{roomId}/off", async (int roomId, AppDb db) =>
+{
+    var room = rooms.FirstOrDefault(r => r.Id == roomId);
+    if (room == null)
+        return Results.NotFound($"Room {roomId} not found");
+
+    var state = new State
+    {
+        JsonData = JsonSerializer.Serialize(new {
+            room = roomId,
+            isOn = false
+        }),
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.States.Add(state);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { roomId, isOn = false });
+});
+
+// ==============================
+// ★ Room API（ここまで）
+// ==============================
+
+// ==============================
+// ★ Door API（ここから）
+// ==============================
+
+// ドアを開ける
+app.MapPost("/rooms/{roomId}/doors/{doorId}/open", async (int roomId, int doorId, AppDb db) =>
+{
+    var room = rooms.FirstOrDefault(r => r.Id == roomId);
+    if (room == null)
+        return Results.NotFound($"Room {roomId} not found");
+
+    var door = room.Doors.FirstOrDefault(d => d.Id == doorId);
+    if (door == null)
+        return Results.NotFound($"Door {doorId} not found in room {roomId}");
+
+    var state = new State
+    {
+        JsonData = JsonSerializer.Serialize(new {
+            room = roomId,
+            door = doorId,
+            isOpen = true
+        }),
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.States.Add(state);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { roomId, doorId, isOpen = true });
+});
+
+// ドアを閉める
+app.MapPost("/rooms/{roomId}/doors/{doorId}/close", async (int roomId, int doorId, AppDb db) =>
+{
+    var room = rooms.FirstOrDefault(r => r.Id == roomId);
+    if (room == null)
+        return Results.NotFound($"Room {roomId} not found");
+
+    var door = room.Doors.FirstOrDefault(d => d.Id == doorId);
+    if (door == null)
+        return Results.NotFound($"Door {doorId} not found in room {roomId}");
+
+    var state = new State
+    {
+            JsonData = JsonSerializer.Serialize(new {
+            room = roomId,
+            door = doorId,
+            isOpen = false
+        }),
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.States.Add(state);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { roomId, doorId, isOpen = false });
+});
+
+// ==============================
+// ★ Door API（ここまで）
+// ==============================
+
+// ==============================
+// ★ Furniture API（ここから）
+// ==============================
+
+// 家具を ON にする
+app.MapPost("/rooms/{roomId}/furnitures/{furnitureId}/on", async (int roomId, int furnitureId, AppDb db) =>
+{
+    var room = rooms.FirstOrDefault(r => r.Id == roomId);
+    if (room == null)
+        return Results.NotFound($"Room {roomId} not found");
+
+    var f = room.Furnitures.FirstOrDefault(x => x.Id == furnitureId);
+    if (f == null)
+        return Results.NotFound($"Furniture {furnitureId} not found in room {roomId}");
+
+    var state = new State
+    {
+        JsonData = JsonSerializer.Serialize(new {
+            room = roomId,
+            furniture = furnitureId,
+            isOn = true
+        }),
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.States.Add(state);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { roomId, furnitureId, isOn = true });
+});
+
+// 家具を OFF にする
+app.MapPost("/rooms/{roomId}/furnitures/{furnitureId}/off", async (int roomId, int furnitureId, AppDb db) =>
+{
+    var room = rooms.FirstOrDefault(r => r.Id == roomId);
+    if (room == null)
+        return Results.NotFound($"Room {roomId} not found");
+
+    var f = room.Furnitures.FirstOrDefault(x => x.Id == furnitureId);
+    if (f == null)
+        return Results.NotFound($"Furniture {furnitureId} not found in room {roomId}");
+
+    var state = new State
+    {
+        JsonData = JsonSerializer.Serialize(new {
+            room = roomId,
+            furniture = furnitureId,
+            isOn = false
+        }),
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.States.Add(state);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { roomId, furnitureId, isOn = false });
+});
+
+// ==============================
+// ★ Furniture API（ここまで）
 // ==============================
 
 

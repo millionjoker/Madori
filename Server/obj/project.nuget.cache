@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "pjaHvZsuFEU=",
+  "dgSpecHash": "M1bgKxo1IRQ=",
   "success": true,
-  "projectFilePath": "C:\\Users\\zyoku\\GitHub\\Madori.Api\\Madori.Api.csproj",
+  "projectFilePath": "C:\\Users\\zyoku\\GitHub\\Madori\\Server\\Madori.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\zyoku\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\zyoku\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.8\\microsoft.aspnetcore.openapi.10.0.8.nupkg.sha512",

@@ -3,22 +3,27 @@ import 'door.dart';
 import 'furniture.dart';
 
 class Room {
+  final int id;
   final String name;
   final Color color;
   final List<Offset> points;
   final List<Door> doors;
   final List<Furniture> furnitures;
+  bool isOn;
 
   Room({
+    required this.id,
     required this.name,
     required this.color,
     required this.points,
     required this.doors,
     required this.furnitures,
+    this.isOn = false,
   });
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
+      id: json['Id'],
       name: json['Name'],
       color: _parseColor(json['BackgroundColor']),
       points: (json['Points'] as List)
@@ -37,16 +42,19 @@ class Room {
           : (json['Furnitures'] as List)
                 .map((f) => Furniture.fromJson(f))
                 .toList(),
+      isOn: json['IsOn'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      "Id": id,
       "Name": name,
       "BackgroundColor": _colorToHex(color),
       "Points": points.map((p) => {"X": p.dx, "Y": p.dy}).toList(),
       "Doors": doors.map((d) => d.toJson()).toList(),
       "Furnitures": furnitures.map((f) => f.toJson()).toList(),
+      "IsOn": isOn,
     };
   }
 }

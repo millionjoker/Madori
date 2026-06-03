@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Furniture {
+  final int id;
   final String type;
   final double x;
   final double y;
@@ -10,6 +11,7 @@ class Furniture {
   bool isOn;
 
   Furniture({
+    required this.id,
     required this.type,
     required this.x,
     required this.y,
@@ -21,6 +23,7 @@ class Furniture {
 
   factory Furniture.fromJson(Map<String, dynamic> json) {
     return Furniture(
+      id: json['Id'],
       type: json['Type'],
       x: (json['X'] as num).toDouble(),
       y: (json['Y'] as num).toDouble(),
@@ -32,6 +35,7 @@ class Furniture {
   }
   Map<String, dynamic> toJson() {
     return {
+      "Id": id,
       "Type": type,
       "X": x,
       "Y": y,
