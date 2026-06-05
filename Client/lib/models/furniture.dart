@@ -42,7 +42,7 @@ class Furniture {
       "Width": width,
       "Height": height,
       "Color": _colorToHex(color),
-      "IsOn": isOn,
+      "Value": isOn,
     };
   }
 }

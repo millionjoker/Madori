@@ -54,7 +54,7 @@ class Room {
       "Points": points.map((p) => {"X": p.dx, "Y": p.dy}).toList(),
       "Doors": doors.map((d) => d.toJson()).toList(),
       "Furnitures": furnitures.map((f) => f.toJson()).toList(),
-      "IsOn": isOn,
+      "Value": isOn,
     };
   }
 }

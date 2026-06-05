@@ -34,9 +34,37 @@ app.UseHttpsRedirection();
 // 最新の State を返す
 app.MapGet("/state", async (AppDb db) =>
 {
-    return await db.States
-        .OrderByDescending(s => s.Id)
-        .FirstOrDefaultAsync();
+    var rooms = await db.States
+        .Where(s => s.RoomId != null && s.DoorId == null && s.FurnitureId == null)
+        .Select(s => new {
+            roomId = s.RoomId,
+            isOn = s.IsOn
+        })
+        .ToListAsync();
+
+    var doors = await db.States
+        .Where(s => s.DoorId != null)
+        .Select(s => new {
+            roomId = s.RoomId,
+            doorId = s.DoorId,
+            isOn = s.IsOn
+        })
+        .ToListAsync();
+
+    var furnitures = await db.States
+        .Where(s => s.FurnitureId != null)
+        .Select(s => new {
+            roomId = s.RoomId,
+            furnitureId = s.FurnitureId,
+            isOn = s.IsOn
+        })
+        .ToListAsync();
+
+    return new {
+        rooms,
+        doors,
+        furnitures
+    };    
 });
 
 // State を保存（新規追加）
@@ -61,45 +89,52 @@ app.MapPost("/state", async (AppDb db, State newState) =>
 // 部屋を ON にする
 app.MapPost("/rooms/{roomId}/on", async (int roomId, AppDb db) =>
 {
-    var room = rooms.FirstOrDefault(r => r.Id == roomId);
-    if (room == null)
-        return Results.NotFound($"Room {roomId} not found");
-
-    var state = new State
+    var existing = await db.States
+        .FirstOrDefaultAsync(s => s.RoomId == roomId && s.DoorId == null && s.FurnitureId == null);
+    if (existing != null)
     {
-        JsonData = JsonSerializer.Serialize(new {
-            room = roomId,
-            isOn = true
-        }),
-        UpdatedAt = DateTime.UtcNow
-    };
-
-    db.States.Add(state);
+        existing.IsOn = true;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
+    else
+    {
+        db.States.Add(new State
+        {
+            RoomId = roomId,
+            IsOn = true,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
     await db.SaveChangesAsync();
-
     return Results.Ok(new { roomId, isOn = true });
 });
 
 // 部屋を OFF にする
 app.MapPost("/rooms/{roomId}/off", async (int roomId, AppDb db) =>
 {
-    var room = rooms.FirstOrDefault(r => r.Id == roomId);
-    if (room == null)
-        return Results.NotFound($"Room {roomId} not found");
+    var existing = await db.States
+        .FirstOrDefaultAsync(s =>
+            s.RoomId == roomId &&
+            s.DoorId == null &&
+            s.FurnitureId == null);
 
-    var state = new State
+    if (existing != null)
     {
-        JsonData = JsonSerializer.Serialize(new {
-            room = roomId,
-            isOn = false
-        }),
-        UpdatedAt = DateTime.UtcNow
-    };
+        existing.IsOn = false;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
+    else
+    {
+        db.States.Add(new State
+        {
+            RoomId = roomId,
+            IsOn = false,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
 
-    db.States.Add(state);
     await db.SaveChangesAsync();
-
-    return Results.Ok(new { roomId, isOn = false });
+    return Results.Ok(new { roomId, isOn = false });    
 });
 
 // ==============================
@@ -113,55 +148,55 @@ app.MapPost("/rooms/{roomId}/off", async (int roomId, AppDb db) =>
 // ドアを開ける
 app.MapPost("/rooms/{roomId}/doors/{doorId}/open", async (int roomId, int doorId, AppDb db) =>
 {
-    var room = rooms.FirstOrDefault(r => r.Id == roomId);
-    if (room == null)
-        return Results.NotFound($"Room {roomId} not found");
+    var existing = await db.States
+        .FirstOrDefaultAsync(s => s.RoomId == roomId && s.DoorId == doorId);
 
-    var door = room.Doors.FirstOrDefault(d => d.Id == doorId);
-    if (door == null)
-        return Results.NotFound($"Door {doorId} not found in room {roomId}");
-
-    var state = new State
+    if (existing != null)
     {
-        JsonData = JsonSerializer.Serialize(new {
-            room = roomId,
-            door = doorId,
-            isOpen = true
-        }),
-        UpdatedAt = DateTime.UtcNow
-    };
+        existing.IsOn = true;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
+    else
+    {
+        db.States.Add(new State
+        {
+            RoomId = roomId,
+            DoorId = doorId,
+            IsOn = true,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
 
-    db.States.Add(state);
     await db.SaveChangesAsync();
-
-    return Results.Ok(new { roomId, doorId, isOpen = true });
+    return Results.Ok(new { roomId, doorId, isOn = true });
 });
 
 // ドアを閉める
 app.MapPost("/rooms/{roomId}/doors/{doorId}/close", async (int roomId, int doorId, AppDb db) =>
 {
-    var room = rooms.FirstOrDefault(r => r.Id == roomId);
-    if (room == null)
-        return Results.NotFound($"Room {roomId} not found");
+    var existing = await db.States
+        .FirstOrDefaultAsync(s =>
+            s.RoomId == roomId &&
+            s.DoorId == doorId);
 
-    var door = room.Doors.FirstOrDefault(d => d.Id == doorId);
-    if (door == null)
-        return Results.NotFound($"Door {doorId} not found in room {roomId}");
-
-    var state = new State
+    if (existing != null)
     {
-            JsonData = JsonSerializer.Serialize(new {
-            room = roomId,
-            door = doorId,
-            isOpen = false
-        }),
-        UpdatedAt = DateTime.UtcNow
-    };
+        existing.IsOn = false;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
+    else
+    {
+        db.States.Add(new State
+        {
+            RoomId = roomId,
+            DoorId = doorId,
+            IsOn = false,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
 
-    db.States.Add(state);
     await db.SaveChangesAsync();
-
-    return Results.Ok(new { roomId, doorId, isOpen = false });
+    return Results.Ok(new { roomId, doorId, isOn = false });
 });
 
 // ==============================
@@ -175,55 +210,55 @@ app.MapPost("/rooms/{roomId}/doors/{doorId}/close", async (int roomId, int doorI
 // 家具を ON にする
 app.MapPost("/rooms/{roomId}/furnitures/{furnitureId}/on", async (int roomId, int furnitureId, AppDb db) =>
 {
-    var room = rooms.FirstOrDefault(r => r.Id == roomId);
-    if (room == null)
-        return Results.NotFound($"Room {roomId} not found");
+    var existing = await db.States
+        .FirstOrDefaultAsync(s => s.RoomId == roomId && s.FurnitureId == furnitureId);
 
-    var f = room.Furnitures.FirstOrDefault(x => x.Id == furnitureId);
-    if (f == null)
-        return Results.NotFound($"Furniture {furnitureId} not found in room {roomId}");
-
-    var state = new State
+    if (existing != null)
     {
-        JsonData = JsonSerializer.Serialize(new {
-            room = roomId,
-            furniture = furnitureId,
-            isOn = true
-        }),
-        UpdatedAt = DateTime.UtcNow
-    };
+        existing.IsOn = true;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
+    else
+    {
+        db.States.Add(new State
+        {
+            RoomId = roomId,
+            FurnitureId = furnitureId,
+            IsOn = true,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
 
-    db.States.Add(state);
     await db.SaveChangesAsync();
-
-    return Results.Ok(new { roomId, furnitureId, isOn = true });
+    return Results.Ok(new { roomId, furnitureId, isOn = true });    
 });
 
 // 家具を OFF にする
 app.MapPost("/rooms/{roomId}/furnitures/{furnitureId}/off", async (int roomId, int furnitureId, AppDb db) =>
 {
-    var room = rooms.FirstOrDefault(r => r.Id == roomId);
-    if (room == null)
-        return Results.NotFound($"Room {roomId} not found");
+    var existing = await db.States
+        .FirstOrDefaultAsync(s =>
+            s.RoomId == roomId &&
+            s.FurnitureId == furnitureId);
 
-    var f = room.Furnitures.FirstOrDefault(x => x.Id == furnitureId);
-    if (f == null)
-        return Results.NotFound($"Furniture {furnitureId} not found in room {roomId}");
-
-    var state = new State
+    if (existing != null)
     {
-        JsonData = JsonSerializer.Serialize(new {
-            room = roomId,
-            furniture = furnitureId,
-            isOn = false
-        }),
-        UpdatedAt = DateTime.UtcNow
-    };
+        existing.IsOn = false;
+        existing.UpdatedAt = DateTime.UtcNow;
+    }
+    else
+    {
+        db.States.Add(new State
+        {
+            RoomId = roomId,
+            FurnitureId = furnitureId,
+            IsOn = false,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
 
-    db.States.Add(state);
     await db.SaveChangesAsync();
-
-    return Results.Ok(new { roomId, furnitureId, isOn = false });
+    return Results.Ok(new { roomId, furnitureId, isOn = false });    
 });
 
 // ==============================

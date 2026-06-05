@@ -46,12 +46,16 @@ class StateLogService {
     await file.writeAsString(jsonEncode(state));
   }
 
-  Future<void> appendLog(String eventType, String deviceId, bool value) async {
+  Future<void> appendLog(
+    String eventType,
+    String deviceId,
+    Map<String, dynamic> payload,
+  ) async {
     final log = {
       "deviceId": deviceId,
       "eventTime": DateTime.now().toUtc().toIso8601String(),
       "eventType": eventType,
-      "payload": {"value": value},
+      "payload": payload,
     };
 
     // --- Web の場合はファイルシステムが使えない ---
@@ -70,7 +74,7 @@ class StateLogService {
   // ★ 1回の操作で state.json と logs.jsonl を両方更新
   Future<void> toggleItem(String type, String id, bool value) async {
     await updateState(type, id, value);
-    await appendLog(type, id, value);
+    await appendLog(type, id, {"id": id, "value": value});
   }
 
   //ログファイルを読む 2026-5-29
@@ -87,10 +91,11 @@ class StateLogService {
   Future<bool> sendLogLineToServer(String line) async {
     final url = Uri.parse('http://localhost:5187/logs');
     try {
+      final jsonMap = jsonDecode(line);
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: line,
+        body: jsonEncode(jsonMap),
       );
       print("レスポンスコード: ${response.statusCode}");
       if (response.body.isNotEmpty) {

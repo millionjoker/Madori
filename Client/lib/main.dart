@@ -9,8 +9,8 @@ void main() async {
 
   // ★ logs.jsonl を作るためのテストログ（1回だけ実行）
   final service = StateLogService();
-  await service.appendLog("test1", "startup", true);
-  await service.syncLogsToServer(); 
+  await service.appendLog("record_start", "startup", {"value": true});
+  await service.syncLogsToServer();
   printAppDir();
   runApp(const MyApp());
 }
@@ -19,7 +19,6 @@ void printAppDir() async {
   final dir = await getApplicationDocumentsDirectory();
   print("保存先フォルダ: ${dir.path}");
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

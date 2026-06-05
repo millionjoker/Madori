@@ -49,7 +49,7 @@ class Door {
       "StartAngle": startAngle,
       "EndAngle": endAngle,
       "Color": _colorToHex(color),
-      "IsOpen": isOpen,
+      "Value": isOpen,
     };
   }
 }

@@ -9,6 +9,8 @@ import 'package:path_drawing/path_drawing.dart';
 import '../services/local_state_service.dart';
 import '../services/state_log_service.dart';
 import 'package:http/http.dart' as http;
+import 'dart:collection';
+import 'dart:convert';
 
 Color hexToColor(String hex) {
   hex = hex.replaceAll('#', '');
@@ -42,7 +44,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
   late List<Room> rooms;
   final localState = LocalStateService();
   final logService = StateLogService();
-
+  String deviceId = "device_01";
   double scale = 1.0;
   double baseScale = 1.0;
   Offset offset = Offset.zero;
@@ -52,6 +54,68 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
   Map<int, AnimationController> doorControllers = {};
 
   int pendingCount = 0; // ★ 未送信件数
+
+  //初期設定
+  Future<void> loadInitialStateFromServer() async {
+    try {
+      final url = Uri.parse("http://localhost:5187/state");
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) return;
+
+      final data = jsonDecode(response.body);
+
+      // --- rooms ---
+      for (var r in data["rooms"]) {
+        final roomId = r["roomId"];
+        final isOn = r["isOn"];
+
+        final room = widget.rooms.firstWhere((x) => x.id == roomId);
+        room.isOn = isOn;
+      }
+
+      // --- doors ---
+      for (var d in data["doors"]) {
+        final roomId = d["roomId"];
+        final doorId = d["doorId"];
+        final isOn = d["isOn"];
+
+        final room = widget.rooms.firstWhere((x) => x.id == roomId);
+        final door = room.doors.firstWhere((x) => x.id == doorId);
+        door.isOpen = isOn;
+      }
+
+      // --- furnitures ---
+      for (var f in data["furnitures"]) {
+        final roomId = f["roomId"];
+        final furnitureId = f["furnitureId"];
+        final isOn = f["isOn"];
+
+        final room = widget.rooms.firstWhere((x) => x.id == roomId);
+        final furniture = room.furnitures.firstWhere(
+          (x) => x.id == furnitureId,
+        );
+        furniture.isOn = isOn;
+      }
+
+      setState(() {});
+    } catch (e) {
+      print("Failed to load initial state: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    rooms = widget.rooms;
+    loadInitialStateFromServer();
+    updatePendingCount();
+    setupWheelListener(
+      () => setState(() {}),
+      () => scale,
+      (newScale) => scale = newScale,
+    );
+  }
 
   // ============================
   // API 呼び出し（失敗しても UI は維持）
@@ -96,21 +160,6 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
   }
 
   @override
-  void initState() {
-    super.initState();
-    rooms = widget.rooms;
-
-    // ★ 起動時に未送信件数を読み込む
-    updatePendingCount();
-
-    setupWheelListener(
-      () => setState(() {}),
-      () => scale,
-      (newScale) => scale = newScale,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
@@ -147,11 +196,14 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                   await localState.saveRooms(rooms);
 
                   await logService.appendLog(
-                    "furniture_click",
-                    "furniture_${f.id}",
-                    f.isOn,
+                    "furniture_on",
+                    deviceId,
+                    LinkedHashMap.from({
+                      "roomId": room.id,
+                      "furnitureId": f.id,
+                      "value": f.isOn,
+                    }),
                   );
-
                   try {
                     await sendFurnitureStateToServer(room.id, f.id, f.isOn);
                     await logService.syncLogsToServer();
@@ -211,11 +263,14 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                             await localState.saveRooms(rooms);
 
                             await logService.appendLog(
-                              "door_click",
-                              "door_${door.id}",
-                              door.isOpen,
+                              "door_open",
+                              deviceId,
+                              LinkedHashMap.from({
+                                "roomId": room.id,
+                                "doorId": door.id,
+                                "value": door.isOpen,
+                              }),
                             );
-
                             try {
                               await sendDoorStateToServer(
                                 room.id,
@@ -257,11 +312,10 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
                 await localState.saveRooms(rooms);
 
                 await logService.appendLog(
-                  "room_click",
-                  "room_${room.id}",
-                  newValue,
+                  "room_on",
+                  deviceId,
+                  LinkedHashMap.from({"roomId": room.id, "value": newValue}),
                 );
-
                 try {
                   await sendRoomStateToServer(room.id, newValue);
                   await logService.syncLogsToServer();
