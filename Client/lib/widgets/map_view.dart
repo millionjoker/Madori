@@ -86,6 +86,7 @@ class _MapViewState extends State<MapView> with TickerProviderStateMixin {
       }
 
       // --- furnitures ---
+      for (var f in data["furnitures"]) {
         final roomId = f["roomId"];
         final furnitureId = f["furnitureId"];
         final isOn = f["isOn"];
